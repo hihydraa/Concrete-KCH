@@ -387,20 +387,6 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
           </div>
         </div>
 
-        {/* Search by ticket number */}
-        <div className="pt-3 border-t border-slate-100 print:hidden">
-          <div className="relative max-w-xs">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="ค้นหาเลขที่ใบชั่ง..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-          </div>
-        </div>
-
         {/* Range KPI quick banner */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100 text-xs sm:text-sm">
           <div className="bg-slate-50 p-2.5 rounded-xl">
@@ -461,16 +447,29 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
 
       {/* Main Tickets Table with Separate Truck Number & Driver Columns */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden print:border-none print:shadow-none">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5 text-amber-600" />
             <h3 className="font-semibold text-slate-900 text-sm sm:text-base">
               รายการบิลตาชั่ง ({displayedTickets.length} รายการ)
             </h3>
           </div>
-          <span className="text-xs text-slate-500">
-            คลิกที่แถวเพื่อแก้ไขคนขับด้วยตนเอง
-          </span>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 print:hidden">
+            <div className="relative w-full sm:w-56">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="ค้นหาเลขที่ใบชั่ง..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <span className="text-xs text-slate-500 whitespace-nowrap">
+              คลิกที่แถวเพื่อแก้ไขคนขับด้วยตนเอง
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto">

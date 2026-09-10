@@ -802,11 +802,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs"
         >
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <h3 className="font-semibold text-slate-900 text-base">
               สัดส่วนเกรดคอนกรีต (Strength Mix)
             </h3>
-            <span className="text-xs text-slate-500 font-mono">2,350 กก./คิว</span>
+            <span className="text-xs text-slate-500 font-mono mt-1 inline-block">2,350 กก./คิว</span>
           </div>
 
           <div className="space-y-2.5">
@@ -837,11 +837,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs"
         >
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <h3 className="font-semibold text-slate-900 text-base">
-              ยอดขายสินค้าอื่นๆ (นอกเหนือคอนกรีต)
+              ยอดขายสินค้าอื่นๆ 
             </h3>
-            <span className="text-xs text-emerald-700 font-medium">
+            <span className="text-xs text-emerald-700 font-medium mt-1 inline-block">
               รวม ฿{Math.round(otherSalesTotalAmount).toLocaleString()}
             </span>
           </div>
@@ -885,11 +885,11 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs"
         >
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <h3 className="font-semibold text-slate-900 text-base">
               วัตถุดิบรับเข้าโรงงาน (Raw Materials)
             </h3>
-            <span className="text-xs text-blue-700 font-medium">รวม {stats.rawMaterialTons.toFixed(1)} ตัน</span>
+            <span className="text-xs text-blue-700 font-medium mt-1 inline-block">รวม {stats.rawMaterialTons.toFixed(1)} ตัน</span>
           </div>
 
           <div className="space-y-2">

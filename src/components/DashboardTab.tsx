@@ -233,6 +233,37 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     return Array.from(map.values()).sort((a, b) => b.cues - a.cues);
   }, [filteredTickets]);
 
+  // Other (non-concrete) product sales breakdown: e.g. ทราย(ขาย), หิน(ขาย), ลูกรัง, ทรายรองพื้น
+  const otherSalesBreakdown = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; unit: string; quantity: number; trips: number; amount: number }
+    >();
+    filteredTickets
+      .filter((t) => t.direction === 'out' && !t.isConcrete)
+      .forEach((t) => {
+        const name = t.productName || 'สินค้าอื่นๆ';
+        const existing = map.get(name) || {
+          name,
+          unit: t.quantityUnit || '',
+          quantity: 0,
+          trips: 0,
+          amount: 0,
+        };
+        existing.quantity += t.quantity;
+        existing.trips += 1;
+        existing.amount += t.price || 0;
+        map.set(name, existing);
+      });
+
+    return Array.from(map.values()).sort((a, b) => b.amount - a.amount || b.quantity - a.quantity);
+  }, [filteredTickets]);
+
+  const otherSalesTotalAmount = useMemo(
+    () => otherSalesBreakdown.reduce((sum, o) => sum + o.amount, 0),
+    [otherSalesBreakdown]
+  );
+
   // Raw materials breakdown
   const rawBreakdown = useMemo(() => {
     const map = new Map<string, { name: string; tons: number; trips: number }>();
@@ -763,8 +794,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </motion.div>
       </div>
 
-      {/* Concrete Grades & Raw Materials Breakdown Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Concrete Grades, Other Product Sales & Raw Materials Breakdown Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Concrete Grades Breakdown */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -797,6 +828,54 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 </div>
               );
             })}
+          </div>
+        </motion.div>
+
+        {/* Other (non-concrete) Product Sales */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-slate-900 text-base">
+              ยอดขายสินค้าอื่นๆ (นอกเหนือคอนกรีต)
+            </h3>
+            <span className="text-xs text-emerald-700 font-medium">
+              รวม ฿{Math.round(otherSalesTotalAmount).toLocaleString()}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {otherSalesBreakdown.map((item) => (
+              <div
+                key={item.name}
+                className="flex items-center justify-between text-xs sm:text-sm p-2 rounded-lg bg-slate-50 gap-2"
+              >
+                <span className="font-medium text-slate-800 truncate">{item.name}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-slate-500">{item.trips} เที่ยว</span>
+                  <span className="font-semibold text-slate-900 font-mono whitespace-nowrap">
+                    {item.quantity.toLocaleString(undefined, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}{' '}
+                    {item.unit}
+                  </span>
+                  {item.amount > 0 && (
+                    <span className="font-bold text-emerald-800 font-mono whitespace-nowrap">
+                      ฿{Math.round(item.amount).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {otherSalesBreakdown.length === 0 && (
+              <div className="text-center py-6 text-slate-400 text-xs">
+                ไม่มีรายการขายสินค้าอื่นๆ (นอกเหนือคอนกรีต) ในช่วงวันที่เลือก
+              </div>
+            )}
           </div>
         </motion.div>
 

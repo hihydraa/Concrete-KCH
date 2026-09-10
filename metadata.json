@@ -1,0 +1,6 @@
+{
+  "name": "ระบบสรุปบิลตาชั่ง แพล้นคอนกรีต",
+  "description": "ระบบสรุปบิลตาชั่ง แพล้นคอนกรีตผสมเสร็จ สรุปเที่ยวขนส่ง คิวคอนกรีต ค่าคอมมิชชั่นคนขับ และตรวจสอบบิลประจำวัน",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

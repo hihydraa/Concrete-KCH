@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 5mm 6mm 5mm 6mm;
+  }
+
+  html, body {
+    background: white !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  header, footer, nav, button, .print\:hidden {
+    display: none !important;
+  }
+
+  /* When printing 1-page, hide all background main view elements */
+  body.printing-one-page .dashboard-main-view,
+  body.printing-one-page nav,
+  body.printing-one-page header {
+    display: none !important;
+  }
+
+  /* Modal unwrap for clean page print */
+  #dashboard-modal-backdrop {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  #dashboard-modal-card {
+    position: static !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    max-height: none !important;
+    transform: none !important;
+  }
+
+  #printable-dashboard-1page-scroll-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  #printable-dashboard-1page {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    max-height: 284mm !important;
+  }
+
+  #printable-dashboard-1page table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  #printable-dashboard-1page th,
+  #printable-dashboard-1page td {
+    padding: 1.5px 3px !important;
+    line-height: 1.25 !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  /* Standard table formatting for general print */
+  body:not(.printing-one-page) table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  body:not(.printing-one-page) th,
+  body:not(.printing-one-page) td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 4px 6px !important;
+  }
+}
+

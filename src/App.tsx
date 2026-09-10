@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trash2, AlertTriangle, X } from 'lucide-react';
+import { Trash2, AlertTriangle, X, Loader2 } from 'lucide-react';
 import { ActiveTab, Navbar } from './components/Navbar';
 import { ImportTab } from './components/ImportTab';
 import { DashboardTab } from './components/DashboardTab';
@@ -13,12 +13,17 @@ import { defaultSettings } from './data/masterSettings';
 import { generateVerifiedSampleTickets } from './data/sampleDataset';
 import { PlantSettings, WeighTicket } from './types';
 import { enrichTicket } from './utils/textNormalizer';
+import { supabase } from './lib/supabaseClient';
+import { fetchAllTickets, upsertTickets, deleteTickets, fetchSettings, saveSettings } from './lib/db';
 
 const STORAGE_KEY = 'cp_plant_tickets_v7';
 
 export default function App() {
-  // Initialize from localStorage if available, or default to verified 1-8 Sep sample data
+  // If Supabase is configured (see src/lib/supabaseClient.ts), it is the source of
+  // truth and tickets are loaded async below — start empty and let the fetch fill it in.
+  // Otherwise, fall back to the original localStorage / sample-data behavior.
   const [tickets, setTickets] = useState<WeighTicket[]>(() => {
+    if (supabase) return [];
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved !== null) {
@@ -36,8 +41,10 @@ export default function App() {
 
   const [settings, setSettings] = useState<PlantSettings>(defaultSettings);
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [isLoadingTickets, setIsLoadingTickets] = useState<boolean>(!!supabase);
 
-  // Persist tickets whenever they change
+  // Persist tickets to localStorage whenever they change (offline-friendly cache;
+  // harmless no-op source of truth once Supabase is configured, see effects below)
   React.useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tickets));
@@ -45,6 +52,128 @@ export default function App() {
       console.warn('LocalStorage save failed:', e);
     }
   }, [tickets]);
+
+  // --- Supabase sync: tickets --------------------------------------------------
+  // Tracks the last snapshot pushed to / pulled from Supabase, so the push-effect
+  // below can diff local `tickets` against it and only upsert/delete what changed.
+  const lastSyncedTicketsRef = useRef<Map<string, WeighTicket> | null>(null);
+  // Set right before applying a fetch result to `tickets`, so the push-effect
+  // recognizes the resulting state change as "just synced" instead of re-pushing it.
+  const isApplyingRemoteTicketsRef = useRef(false);
+
+  // Initial load + Realtime subscription: other devices' changes refresh this one.
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+
+    const loadFromSupabase = async () => {
+      try {
+        const fetched = await fetchAllTickets();
+        if (!active) return;
+        isApplyingRemoteTicketsRef.current = true;
+        setTickets(fetched.map((t) => enrichTicket(t, defaultSettings)));
+      } catch (e) {
+        console.error('Failed to load tickets from Supabase:', e);
+      } finally {
+        if (active) setIsLoadingTickets(false);
+      }
+    };
+
+    loadFromSupabase();
+
+    const channel = supabase
+      .channel('tickets-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
+        loadFromSupabase();
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Push local changes (import, edit, delete, clear-all, load-sample) to Supabase
+  // by diffing the current tickets against the last known-synced snapshot.
+  useEffect(() => {
+    if (!supabase) return;
+
+    if (isApplyingRemoteTicketsRef.current) {
+      isApplyingRemoteTicketsRef.current = false;
+      lastSyncedTicketsRef.current = new Map(tickets.map((t): [string, WeighTicket] => [t.ticketNumber, t]));
+      return;
+    }
+
+    const prevMap: Map<string, WeighTicket> | null = lastSyncedTicketsRef.current;
+    const currentMap: Map<string, WeighTicket> = new Map(
+      tickets.map((t): [string, WeighTicket] => [t.ticketNumber, t])
+    );
+
+    if (prevMap === null) {
+      // Nothing fetched from Supabase yet on this mount — don't push placeholder state.
+      lastSyncedTicketsRef.current = currentMap;
+      return;
+    }
+
+    const toUpsert: WeighTicket[] = [];
+    currentMap.forEach((t, key) => {
+      const old = prevMap.get(key);
+      if (!old || JSON.stringify(old) !== JSON.stringify(t)) {
+        toUpsert.push(t);
+      }
+    });
+    const toDelete: string[] = [];
+    prevMap.forEach((_, key) => {
+      if (!currentMap.has(key)) toDelete.push(key);
+    });
+
+    lastSyncedTicketsRef.current = currentMap;
+
+    if (toUpsert.length === 0 && toDelete.length === 0) return;
+    (async () => {
+      try {
+        if (toUpsert.length > 0) await upsertTickets(toUpsert);
+        if (toDelete.length > 0) await deleteTickets(toDelete);
+      } catch (e) {
+        console.error('Failed to sync tickets to Supabase:', e);
+      }
+    })();
+  }, [tickets]);
+
+  // --- Supabase sync: plant settings -------------------------------------------
+  const settingsLoadedRef = useRef(false);
+  const isApplyingRemoteSettingsRef = useRef(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      try {
+        const fetched = await fetchSettings();
+        if (fetched) {
+          isApplyingRemoteSettingsRef.current = true;
+          setSettings(fetched);
+        } else {
+          // First time this Supabase project is used: seed it with current settings.
+          await saveSettings(settings);
+        }
+      } catch (e) {
+        console.error('Failed to load settings from Supabase:', e);
+      } finally {
+        settingsLoadedRef.current = true;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!supabase || !settingsLoadedRef.current) return;
+    if (isApplyingRemoteSettingsRef.current) {
+      isApplyingRemoteSettingsRef.current = false;
+      return;
+    }
+    saveSettings(settings).catch((e) => console.error('Failed to save settings to Supabase:', e));
+  }, [settings]);
 
   // Default dailyViewDate to the latest date in tickets or current date
   const [dailyViewDate, setDailyViewDate] = useState<string>(() => {
@@ -132,6 +261,15 @@ export default function App() {
     if (dates.length === 1) return dates[0];
     return `${dates[0]} ถึง ${dates[dates.length - 1]}`;
   }, [tickets]);
+
+  if (isLoadingTickets) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+        <p className="text-sm text-slate-500">กำลังโหลดข้อมูลจากฐานข้อมูล...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-amber-100 selection:text-amber-900">

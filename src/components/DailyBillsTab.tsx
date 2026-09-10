@@ -85,7 +85,7 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
       setStartDate(latest);
       setEndDate(latest);
     }
-  }, [initialDate, availableDates, startDate]);
+  }, [initialDate, availableDates]);
 
   // Preset click handlers
   const applyPreset = (range: [string, string]) => {

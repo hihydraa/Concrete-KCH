@@ -30,7 +30,7 @@ export async function parseWeighbridgeExcel(
   settings: PlantSettings
 ): Promise<ParseWeighbridgeResult> {
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
+  const workbook = XLSX.read(buffer, { type: 'array', cellDates: false });
 
   const warnings: string[] = [];
   const parsedSheetNames: string[] = [];

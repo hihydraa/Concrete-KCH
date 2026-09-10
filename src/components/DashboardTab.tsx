@@ -839,7 +839,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         >
           <div className="mb-3">
             <h3 className="font-semibold text-slate-900 text-base">
-              ยอดขายสินค้าอื่นๆ 
+              ยอดขายสินค้าอื่นๆ (นอกเหนือคอนกรีต)
             </h3>
             <span className="text-xs text-emerald-700 font-medium mt-1 inline-block">
               รวม ฿{Math.round(otherSalesTotalAmount).toLocaleString()}

@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Download,
   Edit2,
+  Trash2,
   Calendar,
   Layers,
   ArrowUpDown,
@@ -22,6 +23,7 @@ interface RawDataTabProps {
   settings?: PlantSettings;
   onEditTicket: (ticket: WeighTicket) => void;
   onSaveTicket?: (ticket: WeighTicket) => void;
+  onDeleteTicket?: (ticket: WeighTicket) => void;
 }
 
 export const RawDataTab: React.FC<RawDataTabProps> = ({
@@ -29,6 +31,7 @@ export const RawDataTab: React.FC<RawDataTabProps> = ({
   settings,
   onEditTicket,
   onSaveTicket,
+  onDeleteTicket,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<
@@ -530,13 +533,24 @@ export const RawDataTab: React.FC<RawDataTabProps> = ({
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <button
-                        onClick={() => onEditTicket(t)}
-                        className="p-1.5 rounded-lg text-slate-600 hover:text-amber-700 hover:bg-slate-100 transition cursor-pointer"
-                        title="ดูและแก้ไขบิล"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => onEditTicket(t)}
+                          className="p-1.5 rounded-lg text-slate-600 hover:text-amber-700 hover:bg-slate-100 transition cursor-pointer"
+                          title="ดูและแก้ไขบิล"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        {onDeleteTicket && (
+                          <button
+                            onClick={() => onDeleteTicket(t)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                            title="ลบใบชั่งนี้"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

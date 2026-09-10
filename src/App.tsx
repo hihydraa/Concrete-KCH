@@ -66,6 +66,7 @@ export default function App() {
   }, [tickets, dailyViewDate]);
   const [editingTicket, setEditingTicket] = useState<WeighTicket | null>(null);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState<boolean>(false);
+  const [ticketToDelete, setTicketToDelete] = useState<WeighTicket | null>(null);
 
   // Re-calculate tickets when settings change (e.g. rounding or truck commission rates)
   const handleSettingsUpdated = () => {
@@ -104,6 +105,21 @@ export default function App() {
   // Handle single ticket update
   const handleSaveTicket = (updated: WeighTicket) => {
     setTickets((prev) => prev.map((t) => (t.ticketNumber === updated.ticketNumber ? updated : t)));
+  };
+
+  // Delete a single ticket (asks for confirmation first)
+  const handleRequestDeleteTicket = (ticket: WeighTicket) => {
+    setTicketToDelete(ticket);
+  };
+
+  const handleConfirmDeleteTicket = () => {
+    if (ticketToDelete) {
+      setTickets((prev) => prev.filter((t) => t.ticketNumber !== ticketToDelete.ticketNumber));
+      if (editingTicket && editingTicket.ticketNumber === ticketToDelete.ticketNumber) {
+        setEditingTicket(null);
+      }
+    }
+    setTicketToDelete(null);
   };
 
   // Summary counts
@@ -166,6 +182,7 @@ export default function App() {
                 settings={settings}
                 initialDate={dailyViewDate}
                 onEditTicket={(t) => setEditingTicket(t)}
+                onDeleteTicket={handleRequestDeleteTicket}
               />
             )}
 
@@ -179,6 +196,7 @@ export default function App() {
                 settings={settings}
                 onEditTicket={(t) => setEditingTicket(t)}
                 onSaveTicket={handleSaveTicket}
+                onDeleteTicket={handleRequestDeleteTicket}
               />
             )}
 
@@ -259,6 +277,75 @@ export default function App() {
                   className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm shadow-xs transition cursor-pointer"
                 >
                   ยืนยันล้างข้อมูล
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Single Ticket Confirmation Modal */}
+      <AnimatePresence>
+        {ticketToDelete && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            onClick={() => setTicketToDelete(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center relative"
+            >
+              <button
+                onClick={() => setTicketToDelete(null)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                title="ปิด"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6" />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-900 mb-2">
+                ยืนยันการลบใบชั่ง
+              </h3>
+
+              <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                คุณต้องการลบใบชั่งเลขที่{' '}
+                <strong className="text-rose-600 font-semibold font-mono">
+                  {ticketToDelete.ticketNumber}
+                </strong>{' '}
+                ใช่หรือไม่?
+                <br />
+                <span className="text-xs text-slate-500 mt-2 block bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  วันที่ {ticketToDelete.dateIn} · ทะเบียน {ticketToDelete.plateNumber} ·{' '}
+                  {ticketToDelete.productName || 'ไม่ระบุสินค้า'}
+                  <br />
+                  การลบนี้ไม่สามารถย้อนกลับได้
+                </span>
+              </p>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  id="btn-cancel-delete-ticket-modal"
+                  type="button"
+                  onClick={() => setTicketToDelete(null)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-medium text-sm transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  id="btn-confirm-delete-ticket-modal"
+                  type="button"
+                  onClick={handleConfirmDeleteTicket}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm shadow-xs transition cursor-pointer"
+                >
+                  ยืนยันลบ
                 </button>
               </div>
             </motion.div>

@@ -13,6 +13,8 @@ import {
   UserCheck,
   Layers,
   FileSpreadsheet,
+  Search,
+  Trash2,
 } from 'lucide-react';
 import { WeighTicket, PlantSettings } from '../types';
 import { exportDailyBillsToExcel } from '../utils/excelParser';
@@ -24,6 +26,7 @@ interface DailyBillsTabProps {
   settings?: PlantSettings;
   initialDate?: string;
   onEditTicket?: (ticket: WeighTicket) => void;
+  onDeleteTicket?: (ticket: WeighTicket) => void;
 }
 
 export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
@@ -31,7 +34,11 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
   settings = defaultSettings,
   initialDate,
   onEditTicket,
+  onDeleteTicket,
 }) => {
+  // Search by ticket number (เลขที่ใบชั่ง)
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Available distinct dates
   const availableDates = useMemo(() => {
     const dates = Array.from(new Set(tickets.map((t) => t.dateIn))).filter(Boolean);
@@ -223,6 +230,14 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
     [rangeTickets]
   );
 
+  // Ticket list shown in the table, narrowed by ticket number search
+  // (summary cards above stay based on the full date-range selection)
+  const displayedTickets = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return rangeTickets;
+    return rangeTickets.filter((t) => t.ticketNumber.toLowerCase().includes(q));
+  }, [rangeTickets, searchTerm]);
+
   const dateLabel = startDate === endDate ? startDate : `${startDate} ถึง ${endDate}`;
 
   const handleExportExcel = () => {
@@ -372,6 +387,20 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
           </div>
         </div>
 
+        {/* Search by ticket number */}
+        <div className="pt-3 border-t border-slate-100 print:hidden">
+          <div className="relative max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="ค้นหาเลขที่ใบชั่ง..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+        </div>
+
         {/* Range KPI quick banner */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100 text-xs sm:text-sm">
           <div className="bg-slate-50 p-2.5 rounded-xl">
@@ -436,7 +465,7 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5 text-amber-600" />
             <h3 className="font-semibold text-slate-900 text-sm sm:text-base">
-              รายการบิลตาชั่ง ({rangeTickets.length} รายการ)
+              รายการบิลตาชั่ง ({displayedTickets.length} รายการ)
             </h3>
           </div>
           <span className="text-xs text-slate-500">
@@ -462,17 +491,20 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
                 <th className="py-2.5 px-3 text-right">จำนวน</th>
                 <th className="py-2.5 px-3">ผู้ขนส่ง</th>
                 <th className="py-2.5 px-3 text-center">จับคู่</th>
+                <th className="py-2.5 px-3 text-center">จัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {rangeTickets.length === 0 ? (
+              {displayedTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="py-8 text-center text-slate-400">
-                    ไม่มีรายการในช่วงวันที่เลือก
+                  <td colSpan={14} className="py-8 text-center text-slate-400">
+                    {searchTerm.trim()
+                      ? `ไม่พบเลขที่ใบชั่งที่ตรงกับ "${searchTerm}"`
+                      : 'ไม่มีรายการในช่วงวันที่เลือก'}
                   </td>
                 </tr>
               ) : (
-                rangeTickets.map((t, idx) => (
+                displayedTickets.map((t, idx) => (
                   <tr
                     key={t.ticketNumber || idx}
                     onClick={() => onEditTicket && onEditTicket(t)}
@@ -590,6 +622,18 @@ export const DailyBillsTab: React.FC<DailyBillsTabProps> = ({
                           ? 'ทะเบียน'
                           : 'ไม่พบ'}
                       </span>
+                    </td>
+                    <td className="py-2 px-3 text-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteTicket && onDeleteTicket(t);
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                        title="ลบใบชั่งนี้"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </td>
                   </tr>
                 ))
